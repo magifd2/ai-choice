@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unit tests covering tool call edge cases, JSON/text fallback, request structure, and injection containment.
 - Integration tests (`-tags integration`) for live LLM validation across all categories and injection patterns.
 - English README (`README.md`) with Japanese translation (`README.ja.md`).
+- `AGENTS.md` documenting development rules for AI coding agents and contributors.
 - MIT License.
 
 [Unreleased]: https://github.com/magifd2/ai-choice/compare/v0.1.0...HEAD
