@@ -1,0 +1,33 @@
+# ai-choice configuration example
+# Copy this file to config.yaml and fill in your values.
+
+# OpenAI-compatible API endpoint (required)
+endpoint: "https://api.openai.com/v1"
+
+# API key for authentication (required)
+# You can set the value directly:
+#   api_key: "sk-..."
+# Or reference an environment variable by prefixing with "$":
+#   api_key: "$OPENAI_API_KEY"
+api_key: "$OPENAI_API_KEY"
+
+# Model to use for classification (required)
+model: "gpt-4o-mini"
+
+# HTTP request timeout in seconds (default: 30)
+timeout_seconds: 30
+
+# Maximum number of retry attempts on transient errors (default: 3)
+max_retries: 3
+
+# Classification choices (at least one required)
+# Each choice has a tag (the output value) and a description (shown to the LLM).
+choices:
+  - tag: "weather"
+    description: "天気予報や気象情報に関する質問や話題"
+  - tag: "time"
+    description: "現在時刻や時間の経過に関する質問や話題"
+  - tag: "fortune"
+    description: "占いや運勢、星座に関する質問や話題"
+  - tag: "default"
+    description: "上記のいずれにも当てはまらない質問や話題"
