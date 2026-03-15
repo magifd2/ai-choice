@@ -39,12 +39,9 @@ func Classify(ctx context.Context, input string, cfg *config.Config, client LLMC
 			{Role: "user", Content: wrapped},
 		},
 		Tools: []llm.Tool{tool},
-		ToolChoice: map[string]any{
-			"type": "function",
-			"function": map[string]string{
-				"name": "select_choice",
-			},
-		},
+		// "required" forces the model to call one of the provided tools.
+		// Some local LLMs only accept string values here (not the object form).
+		ToolChoice: "required",
 	}
 
 	resp, err := client.Chat(ctx, req)
