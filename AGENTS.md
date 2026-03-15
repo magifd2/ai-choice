@@ -86,6 +86,7 @@ These rules must never be relaxed:
 
 ### Input handling
 - Never pass raw user input directly to the LLM — always wrap it.
+- Stdin is capped at **128 KB** (`maxInputBytes` in `main.go`) via `io.LimitReader`. This prevents memory exhaustion (DoS) and LLM context window overflow. Do not raise this limit without good reason.
 - Validate all config fields on load; fail fast with a clear error message.
 
 ---

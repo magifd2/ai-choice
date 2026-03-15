@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Limit stdin input to 128 KB (`maxInputBytes`) to prevent memory exhaustion (DoS) and LLM context overflow. Inputs exceeding the limit are rejected with an error on stderr.
+
 ---
 
 ## [0.1.0] - 2026-03-15
