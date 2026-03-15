@@ -1,4 +1,8 @@
-// Package config handles loading and validation of the ai-choice configuration file.
+// Package config handles loading and validation of the ai-choice configuration files.
+//
+// Configuration is split into two files:
+//   - System config: LLM API settings (endpoint, api_key, model, timeouts)
+//   - Choices config: classification choices (tag + description pairs)
 package config
 
 import (
@@ -17,26 +21,27 @@ type Choice struct {
 	Description string `yaml:"description"`
 }
 
-// Config holds the full application configuration loaded from a YAML file.
+// Config holds the full runtime configuration, merged from the system and choices files.
 type Config struct {
-	// Endpoint is the base URL of the OpenAI-compatible API (e.g. "https://api.openai.com/v1").
-	Endpoint string `yaml:"endpoint"`
+	// System settings — loaded from the system config file.
 
-	// APIKey is the API key used for authentication. If the value starts with "$",
-	// it is treated as an environment variable name and resolved at load time.
-	APIKey string `yaml:"api_key"`
+	// Endpoint is the base URL of the OpenAI-compatible API (e.g. "https://api.openai.com/v1").
+	Endpoint string
+
+	// APIKey is the resolved API key used for authentication.
+	APIKey string
 
 	// Model is the model identifier to use for inference.
-	Model string `yaml:"model"`
+	Model string
 
 	// TimeoutSeconds is the per-request HTTP timeout in seconds.
-	TimeoutSeconds int `yaml:"timeout_seconds"`
+	TimeoutSeconds int
 
 	// MaxRetries is the maximum number of retry attempts on transient errors.
-	MaxRetries int `yaml:"max_retries"`
+	MaxRetries int
 
-	// Choices is the ordered list of classification options.
-	Choices []Choice `yaml:"choices"`
+	// Choices — loaded from the choices config file.
+	Choices []Choice
 }
 
 // Timeout returns the configured HTTP timeout as a time.Duration.
@@ -47,45 +52,98 @@ func (c *Config) Timeout() time.Duration {
 	return time.Duration(c.TimeoutSeconds) * time.Second
 }
 
-// Load reads a YAML config file from path, expands environment variables,
-// and validates the resulting Config.
-func Load(path string) (*Config, error) {
-	data, err := os.ReadFile(path)
+// systemFile is the YAML structure of the system config file.
+type systemFile struct {
+	Endpoint       string `yaml:"endpoint"`
+	APIKey         string `yaml:"api_key"`
+	Model          string `yaml:"model"`
+	TimeoutSeconds int    `yaml:"timeout_seconds"`
+	MaxRetries     int    `yaml:"max_retries"`
+}
+
+// choicesFile is the YAML structure of the choices config file.
+type choicesFile struct {
+	Choices []Choice `yaml:"choices"`
+}
+
+// Load reads the system config from systemPath and the choices config from
+// choicesPath, merges them, applies defaults, and validates the result.
+func Load(systemPath, choicesPath string) (*Config, error) {
+	sys, err := loadSystem(systemPath)
 	if err != nil {
-		return nil, fmt.Errorf("reading config file %q: %w", path, err)
+		return nil, err
 	}
 
-	var cfg Config
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return nil, fmt.Errorf("parsing config file %q: %w", path, err)
+	chs, err := loadChoices(choicesPath)
+	if err != nil {
+		return nil, err
 	}
 
-	// Expand environment variable references in APIKey.
-	if strings.HasPrefix(cfg.APIKey, "$") {
-		envName := strings.TrimPrefix(cfg.APIKey, "$")
-		val := os.Getenv(envName)
-		if val == "" {
-			return nil, fmt.Errorf("environment variable %q referenced by api_key is not set or empty", envName)
-		}
-		cfg.APIKey = val
+	cfg := &Config{
+		Endpoint:       sys.Endpoint,
+		APIKey:         sys.APIKey,
+		Model:          sys.Model,
+		TimeoutSeconds: sys.TimeoutSeconds,
+		MaxRetries:     sys.MaxRetries,
+		Choices:        chs.Choices,
 	}
 
-	// Apply sensible defaults.
-	if cfg.TimeoutSeconds <= 0 {
-		cfg.TimeoutSeconds = 30
-	}
-	if cfg.MaxRetries < 0 {
-		cfg.MaxRetries = 0
-	}
-	if cfg.MaxRetries == 0 {
-		cfg.MaxRetries = 3
-	}
+	applyDefaults(cfg)
 
 	if err := cfg.validate(); err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
 	}
+	return cfg, nil
+}
 
-	return &cfg, nil
+// loadSystem reads and parses the system config file.
+func loadSystem(path string) (systemFile, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return systemFile{}, fmt.Errorf("reading system config %q: %w", path, err)
+	}
+
+	var sys systemFile
+	if err := yaml.Unmarshal(data, &sys); err != nil {
+		return systemFile{}, fmt.Errorf("parsing system config %q: %w", path, err)
+	}
+
+	// Expand environment variable reference in api_key.
+	if strings.HasPrefix(sys.APIKey, "$") {
+		envName := strings.TrimPrefix(sys.APIKey, "$")
+		val := os.Getenv(envName)
+		if val == "" {
+			return systemFile{}, fmt.Errorf("environment variable %q referenced by api_key is not set or empty", envName)
+		}
+		sys.APIKey = val
+	}
+
+	return sys, nil
+}
+
+// loadChoices reads and parses the choices config file.
+func loadChoices(path string) (choicesFile, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return choicesFile{}, fmt.Errorf("reading choices config %q: %w", path, err)
+	}
+
+	var chs choicesFile
+	if err := yaml.Unmarshal(data, &chs); err != nil {
+		return choicesFile{}, fmt.Errorf("parsing choices config %q: %w", path, err)
+	}
+
+	return chs, nil
+}
+
+// applyDefaults fills in zero values with sensible defaults.
+func applyDefaults(cfg *Config) {
+	if cfg.TimeoutSeconds <= 0 {
+		cfg.TimeoutSeconds = 30
+	}
+	if cfg.MaxRetries <= 0 {
+		cfg.MaxRetries = 3
+	}
 }
 
 // validate checks that all required fields are present and consistent.

@@ -1,0 +1,22 @@
+# ai-choice system configuration example
+# Contains LLM API settings. Copy this file to system.yaml and fill in your values.
+# Keep this file private — it contains your API key or a reference to it.
+
+# OpenAI-compatible API endpoint (required)
+endpoint: "https://api.openai.com/v1"
+
+# API key for authentication (required)
+# Set the value directly:
+#   api_key: "sk-..."
+# Or reference an environment variable by prefixing with "$":
+#   api_key: "$OPENAI_API_KEY"
+api_key: "$OPENAI_API_KEY"
+
+# Model to use for classification (required)
+model: "gpt-4o-mini"
+
+# HTTP request timeout in seconds (default: 30)
+timeout_seconds: 30
+
+# Maximum number of retry attempts on transient errors (default: 3)
+max_retries: 3

@@ -3,7 +3,7 @@
 //
 // Usage:
 //
-//	echo "What is the weather today?" | ai-choice -config config.yaml
+//	echo "What is the weather today?" | ai-choice -system system.yaml -choices choices.yaml
 package main
 
 import (
@@ -27,7 +27,8 @@ func main() {
 }
 
 func run() int {
-	configPath := flag.String("config", "config.yaml", "path to config file")
+	systemPath := flag.String("system", "system.yaml", "path to system config file (LLM API settings)")
+	choicesPath := flag.String("choices", "choices.yaml", "path to choices config file (classification options)")
 	showVersion := flag.Bool("version", false, "print version and exit")
 	flag.Parse()
 
@@ -48,10 +49,10 @@ func run() int {
 		return 1
 	}
 
-	// Load configuration.
-	cfg, err := config.Load(*configPath)
+	// Load configuration from separate system and choices files.
+	cfg, err := config.Load(*systemPath, *choicesPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: loading config %q: %v\n", *configPath, err)
+		fmt.Fprintf(os.Stderr, "error: loading config: %v\n", err)
 		return 1
 	}
 

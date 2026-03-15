@@ -1,0 +1,16 @@
+# ai-choice choices configuration example
+# Defines the classification options. Copy this file to choices.yaml and customize.
+# This file contains application logic and can be version-controlled freely.
+
+# Classification choices (at least one required)
+# tag:         the value output to stdout when this choice is selected
+# description: natural language description shown to the LLM for matching
+choices:
+  - tag: "weather"
+    description: "天気予報や気象情報に関する質問や話題"
+  - tag: "time"
+    description: "現在時刻や時間の経過に関する質問や話題"
+  - tag: "fortune"
+    description: "占いや運勢、星座に関する質問や話題"
+  - tag: "default"
+    description: "上記のいずれにも当てはまらない質問や話題"

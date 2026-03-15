@@ -24,12 +24,15 @@ func writeTemp(t *testing.T, content string) string {
 	return f.Name()
 }
 
-const validYAML = `
+const validSystemYAML = `
 endpoint: "https://api.openai.com/v1"
 api_key: "sk-test"
 model: "gpt-4o-mini"
 timeout_seconds: 10
 max_retries: 2
+`
+
+const validChoicesYAML = `
 choices:
   - tag: "weather"
     description: "Weather forecast questions"
@@ -38,8 +41,10 @@ choices:
 `
 
 func TestLoad_Valid(t *testing.T) {
-	path := writeTemp(t, validYAML)
-	cfg, err := config.Load(path)
+	sysPath := writeTemp(t, validSystemYAML)
+	chsPath := writeTemp(t, validChoicesYAML)
+
+	cfg, err := config.Load(sysPath, chsPath)
 	if err != nil {
 		t.Fatalf("Load() unexpected error: %v", err)
 	}
@@ -71,10 +76,11 @@ func TestLoad_EnvVarAPIKey(t *testing.T) {
 	const envName = "TEST_AI_CHOICE_APIKEY"
 	t.Setenv(envName, "sk-from-env")
 
-	yaml := strings.ReplaceAll(validYAML, `"sk-test"`, `"$`+envName+`"`)
-	path := writeTemp(t, yaml)
+	yaml := strings.ReplaceAll(validSystemYAML, `"sk-test"`, `"$`+envName+`"`)
+	sysPath := writeTemp(t, yaml)
+	chsPath := writeTemp(t, validChoicesYAML)
 
-	cfg, err := config.Load(path)
+	cfg, err := config.Load(sysPath, chsPath)
 	if err != nil {
 		t.Fatalf("Load() unexpected error: %v", err)
 	}
@@ -87,10 +93,11 @@ func TestLoad_EnvVarAPIKey_Missing(t *testing.T) {
 	const envName = "TEST_AI_CHOICE_MISSING_KEY_XYZ"
 	os.Unsetenv(envName)
 
-	yaml := strings.ReplaceAll(validYAML, `"sk-test"`, `"$`+envName+`"`)
-	path := writeTemp(t, yaml)
+	yaml := strings.ReplaceAll(validSystemYAML, `"sk-test"`, `"$`+envName+`"`)
+	sysPath := writeTemp(t, yaml)
+	chsPath := writeTemp(t, validChoicesYAML)
 
-	_, err := config.Load(path)
+	_, err := config.Load(sysPath, chsPath)
 	if err == nil {
 		t.Fatal("Load() expected error for missing env var, got nil")
 	}
@@ -99,31 +106,49 @@ func TestLoad_EnvVarAPIKey_Missing(t *testing.T) {
 	}
 }
 
-func TestLoad_FileNotFound(t *testing.T) {
-	_, err := config.Load(filepath.Join(t.TempDir(), "nonexistent.yaml"))
+func TestLoad_SystemFileNotFound(t *testing.T) {
+	chsPath := writeTemp(t, validChoicesYAML)
+	_, err := config.Load(filepath.Join(t.TempDir(), "nonexistent.yaml"), chsPath)
 	if err == nil {
-		t.Fatal("Load() expected error for missing file, got nil")
+		t.Fatal("Load() expected error for missing system file, got nil")
 	}
 }
 
-func TestLoad_InvalidYAML(t *testing.T) {
-	path := writeTemp(t, "this: is: not: valid: yaml: :")
-	_, err := config.Load(path)
+func TestLoad_ChoicesFileNotFound(t *testing.T) {
+	sysPath := writeTemp(t, validSystemYAML)
+	_, err := config.Load(sysPath, filepath.Join(t.TempDir(), "nonexistent.yaml"))
 	if err == nil {
-		t.Fatal("Load() expected error for invalid YAML, got nil")
+		t.Fatal("Load() expected error for missing choices file, got nil")
+	}
+}
+
+func TestLoad_InvalidSystemYAML(t *testing.T) {
+	sysPath := writeTemp(t, "this: is: not: valid: yaml: :")
+	chsPath := writeTemp(t, validChoicesYAML)
+	_, err := config.Load(sysPath, chsPath)
+	if err == nil {
+		t.Fatal("Load() expected error for invalid system YAML, got nil")
+	}
+}
+
+func TestLoad_InvalidChoicesYAML(t *testing.T) {
+	sysPath := writeTemp(t, validSystemYAML)
+	chsPath := writeTemp(t, "this: is: not: valid: yaml: :")
+	_, err := config.Load(sysPath, chsPath)
+	if err == nil {
+		t.Fatal("Load() expected error for invalid choices YAML, got nil")
 	}
 }
 
 func TestLoad_MissingEndpoint(t *testing.T) {
-	yaml := `
+	sys := `
 api_key: "sk-test"
 model: "gpt-4o-mini"
-choices:
-  - tag: "a"
-    description: "desc"
 `
-	path := writeTemp(t, yaml)
-	_, err := config.Load(path)
+	sysPath := writeTemp(t, sys)
+	chsPath := writeTemp(t, validChoicesYAML)
+
+	_, err := config.Load(sysPath, chsPath)
 	if err == nil {
 		t.Fatal("Load() expected validation error, got nil")
 	}
@@ -133,32 +158,27 @@ choices:
 }
 
 func TestLoad_NoChoices(t *testing.T) {
-	yaml := `
-endpoint: "https://api.openai.com/v1"
-api_key: "sk-test"
-model: "gpt-4o-mini"
-choices: []
-`
-	path := writeTemp(t, yaml)
-	_, err := config.Load(path)
+	sysPath := writeTemp(t, validSystemYAML)
+	chsPath := writeTemp(t, "choices: []")
+
+	_, err := config.Load(sysPath, chsPath)
 	if err == nil {
 		t.Fatal("Load() expected validation error for empty choices, got nil")
 	}
 }
 
 func TestLoad_DuplicateTag(t *testing.T) {
-	yaml := `
-endpoint: "https://api.openai.com/v1"
-api_key: "sk-test"
-model: "gpt-4o-mini"
+	chs := `
 choices:
   - tag: "dup"
     description: "first"
   - tag: "dup"
     description: "second"
 `
-	path := writeTemp(t, yaml)
-	_, err := config.Load(path)
+	sysPath := writeTemp(t, validSystemYAML)
+	chsPath := writeTemp(t, chs)
+
+	_, err := config.Load(sysPath, chsPath)
 	if err == nil {
 		t.Fatal("Load() expected validation error for duplicate tag, got nil")
 	}
@@ -168,16 +188,15 @@ choices:
 }
 
 func TestLoad_DefaultTimeout(t *testing.T) {
-	yaml := `
+	sys := `
 endpoint: "https://api.openai.com/v1"
 api_key: "sk-test"
 model: "gpt-4o-mini"
-choices:
-  - tag: "a"
-    description: "desc"
 `
-	path := writeTemp(t, yaml)
-	cfg, err := config.Load(path)
+	sysPath := writeTemp(t, sys)
+	chsPath := writeTemp(t, validChoicesYAML)
+
+	cfg, err := config.Load(sysPath, chsPath)
 	if err != nil {
 		t.Fatalf("Load() unexpected error: %v", err)
 	}

@@ -48,12 +48,20 @@ make build
 
 ## 設定ファイル / Configuration
 
-`config.yaml.example` をコピーして `config.yaml` を作成します。
-Copy `config.yaml.example` to `config.yaml`:
+設定は2つのファイルに分かれています。
+Configuration is split into two files:
+
+| ファイル / File | 役割 / Purpose |
+|---|---|
+| `system.yaml` | LLM APIの接続設定 (秘密情報を含む) / LLM API settings (contains secrets) |
+| `choices.yaml` | 分類の選択肢定義 (バージョン管理可) / Classification choices (safe to version-control) |
 
 ```bash
-cp config.yaml.example config.yaml
+cp system.yaml.example system.yaml   # APIキーを設定 / fill in API key
+cp choices.yaml.example choices.yaml # 用途に合わせて編集 / customize for your use case
 ```
+
+### system.yaml
 
 ```yaml
 endpoint: "https://api.openai.com/v1"
@@ -65,7 +73,19 @@ api_key: "$OPENAI_API_KEY"
 model: "gpt-4o-mini"
 timeout_seconds: 30
 max_retries: 3
+```
 
+| Field | Required | Default | Description |
+|---|---|---|---|
+| `endpoint` | Yes | — | OpenAI-compatible API base URL |
+| `api_key` | Yes | — | API key or `$ENV_VAR` reference |
+| `model` | Yes | — | Model identifier |
+| `timeout_seconds` | No | `30` | Per-request HTTP timeout (seconds) |
+| `max_retries` | No | `3` | Max retry attempts on transient errors |
+
+### choices.yaml
+
+```yaml
 choices:
   - tag: "weather"
     description: "天気予報や気象情報に関する質問や話題"
@@ -77,27 +97,21 @@ choices:
     description: "上記のいずれにも当てはまらない質問や話題"
 ```
 
-### 設定項目 / Config Fields
-
-| Field | Required | Default | Description |
-|---|---|---|---|
-| `endpoint` | Yes | — | OpenAI-compatible API base URL |
-| `api_key` | Yes | — | API key or `$ENV_VAR` reference |
-| `model` | Yes | — | Model identifier |
-| `timeout_seconds` | No | `30` | Per-request HTTP timeout |
-| `max_retries` | No | `3` | Max retry attempts on transient errors |
-| `choices` | Yes | — | List of `{tag, description}` pairs |
+| Field | Required | Description |
+|---|---|---|
+| `tag` | Yes | Value output to stdout when this choice is selected |
+| `description` | Yes | Natural language description shown to the LLM for matching |
 
 ---
 
 ## 使い方 / Usage
 
 ```bash
-# 基本的な使い方 / Basic usage
+# 基本的な使い方 / Basic usage (system.yaml + choices.yaml in current dir)
 echo "今日の天気は？" | ai-choice
 
-# カスタム設定ファイルを指定 / Specify a custom config file
-echo "What time is it?" | ai-choice -config /path/to/config.yaml
+# 設定ファイルのパスを明示 / Specify config file paths explicitly
+echo "What time is it?" | ai-choice -system /path/to/system.yaml -choices /path/to/choices.yaml
 
 # バージョン確認 / Print version
 ai-choice -version
