@@ -15,7 +15,7 @@ echo "What's the weather like tomorrow?" | ai-choice
 
 ## Overview
 
-| | |
+| Item | Detail |
 |---|---|
 | **Input** | Free-form text on stdin |
 | **Output** | A tag defined in `choices.yaml` (stdout) |
