@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+.DS_Store?
+._*
+
+# Build output
+ai-choice
+ai-choice.exe
+dist/
+
+# Config files (may contain secrets)
+system.yaml
+
+# Editor
+.vscode/
+.idea/
