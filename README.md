@@ -170,6 +170,39 @@ esac
 
 ---
 
+## Model Benchmark
+
+Classification accuracy and per-request latency measured against 36 test cases
+(weather / time / fortune / default categories, Japanese and English input, prompt injection patterns).
+
+**Test environment**
+
+| | |
+|---|---|
+| Backend | LM Studio local server |
+| Host | Mac Studio (Z17Z000QJJ/A) |
+| Chip | Apple M2 Max — 12 cores (8P + 4E) |
+| Memory | 64 GB |
+
+**Results**
+
+| Model | Accuracy | Steady-state latency | Total (36 req) |
+|---|---|---|---|
+| llama-3.2-1b-instruct | 18/36 (50%) | ~0.22s | 10.1s |
+| llama-3.2-3b-instruct | 28/36 (78%) | ~0.21s | 9.7s |
+| qwen2.5-7b-instruct-mlx | 35/36 (97%) | ~0.48s | 19.0s |
+| openai/gpt-oss-20b | **36/36 (100%)** | ~1.22s | 46.1s |
+
+"Steady-state latency" excludes the first request (model warm-up).
+
+**Recommendations**
+
+- Speed priority → **Qwen2.5-7B-Instruct** (0.48s/req, 97%)
+- Accuracy priority → **gpt-oss-20B** (1.22s/req, 100%)
+- The 1B/3B models are too inaccurate for production use with Japanese input.
+
+---
+
 ## Building
 
 ```bash
