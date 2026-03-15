@@ -177,7 +177,7 @@ Classification accuracy and per-request latency measured against 36 test cases
 
 **Test environment**
 
-| | |
+| Item | Detail |
 |---|---|
 | Backend | LM Studio local server |
 | Host | Mac Studio (Z17Z000QJJ/A) |
