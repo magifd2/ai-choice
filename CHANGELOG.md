@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.1.1] - 2026-03-15
+
 ### Security
 
 - Limit stdin input to 128 KB (`maxInputBytes`) to prevent memory exhaustion (DoS) and LLM context overflow. Inputs exceeding the limit are rejected with an error on stderr.
@@ -41,5 +45,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `AGENTS.md` documenting development rules for AI coding agents and contributors.
 - MIT License.
 
-[Unreleased]: https://github.com/magifd2/ai-choice/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/magifd2/ai-choice/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/magifd2/ai-choice/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/magifd2/ai-choice/releases/tag/v0.1.0
