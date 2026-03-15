@@ -185,6 +185,6 @@ make release
 
 ## ライセンス / License
 
-MIT License — Copyright (c) 2024 magifd2
+MIT License — Copyright (c) 2026 magifd2
 
 See [LICENSE](LICENSE) for details.
